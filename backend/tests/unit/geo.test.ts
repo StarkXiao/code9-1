@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boundingBox, fuzzCoordinates, haversineMeters, isValidLatLng } from "../../src/services/geo";
+import { boundingBox, fuzzCoordinates, haversineMeters, isValidLatLng, walkingMinutes } from "../../src/services/geo";
 
 describe("位置模糊化", () => {
   const origin = { lat: 31.2304, lng: 121.4737 };
@@ -49,5 +49,31 @@ describe("位置模糊化", () => {
     expect(isValidLatLng(91, 121.4)).toBe(false);
     expect(isValidLatLng(31.2, 181)).toBe(false);
     expect(isValidLatLng(Number.NaN, 121.4)).toBe(false);
+  });
+});
+
+describe("步行耗时估算", () => {
+  it("距离为 0 或非法时至少 1 分钟", () => {
+    expect(walkingMinutes(0)).toBe(1);
+    expect(walkingMinutes(-10)).toBe(1);
+    expect(walkingMinutes(Number.NaN)).toBe(1);
+  });
+
+  it("按约 75 米/分钟（含 1.3 倍绕行系数）估算并四舍五入到整分钟", () => {
+    // 75 米直线 → 约 1.3 分钟 → 1 分钟
+    expect(walkingMinutes(75)).toBe(1);
+    // 300 米直线 → 300 * 1.3 / 75 = 5.2 → 5 分钟
+    expect(walkingMinutes(300)).toBe(5);
+    // 1000 米直线 → 约 17.3 分钟 → 17 分钟
+    expect(walkingMinutes(1000)).toBe(17);
+  });
+
+  it("耗时随距离单调不减", () => {
+    let previous = 0;
+    for (let meters = 0; meters <= 2000; meters += 50) {
+      const minutes = walkingMinutes(meters);
+      expect(minutes).toBeGreaterThanOrEqual(previous);
+      previous = minutes;
+    }
   });
 });

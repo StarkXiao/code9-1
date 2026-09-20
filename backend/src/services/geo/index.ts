@@ -5,9 +5,24 @@ import { logger } from "../../utils/logger";
 const EARTH_RADIUS_M = 6371008.8;
 const METERS_PER_DEG_LAT = 111320;
 
+/**
+ * 步行估算参数。
+ * 直线距离要先按 1.3 倍折算成实际步行距离（路口绕行、过街、建筑遮挡），
+ * 再按 75 米/分钟（约 4.5 km/h 的慢步行速，兼顾老人与推婴儿车的人）估算耗时。
+ * 这只是给"附近搜索"排序用的粗略值，不是路线规划。
+ */
+const WALK_DETOUR_FACTOR = 1.3;
+const WALK_METERS_PER_MINUTE = 75;
+
 export interface LatLng {
   lat: number;
   lng: number;
+}
+
+/** 按直线距离估算步行分钟数（向上取整到整分钟，至少 1 分钟） */
+export function walkingMinutes(straightMeters: number): number {
+  if (!Number.isFinite(straightMeters) || straightMeters <= 0) return 1;
+  return Math.max(1, Math.round((straightMeters * WALK_DETOUR_FACTOR) / WALK_METERS_PER_MINUTE));
 }
 
 export function isValidLatLng(lat: number, lng: number): boolean {

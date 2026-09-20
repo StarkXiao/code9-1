@@ -102,6 +102,15 @@ function goCreate() {
   void router.push({ name: "spot-new" });
 }
 
+// 步行耗时是后端按直线距离估算的粗略值，给一个不显得"精确过头"的展示
+function formatWalking(minutes: number): string {
+  if (minutes < 1) return "1 分钟";
+  if (minutes < 60) return `约 ${minutes} 分钟`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest > 0 ? `约 ${hours} 小时 ${rest} 分钟` : `约 ${hours} 小时`;
+}
+
 onMounted(async () => {
   await catalog.load().catch(() => undefined);
 });
@@ -160,7 +169,7 @@ function resetFilters() {
           <el-select v-model="filters.sort" size="small" style="width: 116px" :disabled="Boolean(near)">
             <el-option label="最新鲜" value="freshness" />
             <el-option label="最新发布" value="newest" />
-            <el-option label="距离最近" value="distance" />
+            <el-option :label="near ? '步行耗时' : '步行最近'" value="distance" />
           </el-select>
         </div>
 
@@ -173,6 +182,10 @@ function resetFilters() {
           <el-button v-if="hasActiveFilter" size="small" text @click="resetFilters">重置</el-button>
           <span class="muted" style="margin-left: auto">共 {{ total }} 条</span>
         </div>
+
+        <p v-if="near" class="muted nearby-hint">
+          已按步行可达耗时从短到长排序，耗时为结合直线距离的估算值，仅供参考。
+        </p>
       </div>
 
       <div v-loading="loading" class="map-side__list">
@@ -199,8 +212,16 @@ function resetFilters() {
           <div class="spot-card__meta">
             <span class="badge">{{ spot.freshness.confirmCount }} 人确认过</span>
             <span v-if="spot.freshness.isStale" class="badge badge--warn">信息可能已过期</span>
+            <span v-if="near && spot.walkingMinutes !== undefined" class="badge badge--ok">
+              <el-icon><Timer /></el-icon>
+              步行 {{ formatWalking(spot.walkingMinutes) }}
+            </span>
             <span v-if="spot.distanceMeters !== undefined" class="badge">
               约 {{ spot.distanceMeters }} 米
+            </span>
+            <span v-if="spot.accessNotice" class="badge badge--warn" :title="spot.accessNotice">
+              <el-icon><Warning /></el-icon>
+              {{ spot.accessNotice }}
             </span>
             <span v-if="spot.media.length" class="badge">{{ spot.media.length }} 张图</span>
           </div>
@@ -227,9 +248,19 @@ function resetFilters() {
   gap: 8px;
 }
 
+.nearby-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .spot-card--active {
   border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
+}
+
+.spot-card__meta {
+  flex-wrap: wrap;
 }
 
 .spot-card__actions {

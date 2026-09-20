@@ -11,7 +11,7 @@ import { AppError } from "../../utils/errors";
 import { parsePagination, pagedResult } from "../../utils/pagination";
 import { assertNoBlockedContent, assertNoPii, checkText } from "../../services/moderation/contentFilter";
 import { computeFreshness } from "../../services/moderation/credit";
-import { boundingBox, fuzzCoordinates, haversineMeters, isValidLatLng, reverseGeocode } from "../../services/geo";
+import { boundingBox, fuzzCoordinates, haversineMeters, isValidLatLng, reverseGeocode, walkingMinutes } from "../../services/geo";
 import { assertAttributesValid, validateAttributes } from "../categories/schemaValidator";
 import { requireCategoryByCode } from "../categories/service";
 import { serializeSpot } from "../shared/serialize";
@@ -199,19 +199,26 @@ export async function listSpots(query: ListSpotsQuery, viewer?: AuthUser) {
   ]);
 
   const confirmed = await lastConfirmedMap(items.map((item) => item.id));
-  let serialized = items.map((item) =>
-    serializeSpot(toSpotLike(item, confirmed.get(item.id.toString()) ?? null), {
-      distanceMeters: near ? haversineMeters(near, { lat: item.publicLat ?? 0, lng: item.publicLng ?? 0 }) : undefined,
-    }),
-  );
+  let serialized = items.map((item) => {
+    const distanceMeters = near
+      ? haversineMeters(near, { lat: item.publicLat ?? 0, lng: item.publicLng ?? 0 })
+      : undefined;
+    return serializeSpot(toSpotLike(item, confirmed.get(item.id.toString()) ?? null), {
+      distanceMeters,
+      walkingMinutes: distanceMeters === undefined ? undefined : walkingMinutes(distanceMeters),
+    });
+  });
 
-  // 按距离排序时在应用层完成：候选集已由 bbox 收窄，成本可控
-  if (near && query.sort === "distance") {
+  // 附近搜索统一按步行耗时排序（耗时相同再按直线距离）：
+  // 候选集已由 bbox 收窄，应用层排序成本可控
+  if (near) {
     serialized = serialized
       .filter((item) => (item.distanceMeters as number) <= radius)
-      .sort((a, b) => (a.distanceMeters as number) - (b.distanceMeters as number));
-  } else if (near) {
-    serialized = serialized.filter((item) => (item.distanceMeters as number) <= radius);
+      .sort(
+        (a, b) =>
+          (a.walkingMinutes as number) - (b.walkingMinutes as number) ||
+          (a.distanceMeters as number) - (b.distanceMeters as number),
+      );
   }
 
   const paged = near ? serialized.slice(pagination.skip, pagination.skip + pagination.take) : serialized;

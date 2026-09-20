@@ -1,5 +1,6 @@
 import type { SpotStatus, PrivacyStatus } from "@prisma/client";
 import type { ImageVariant } from "../../config/constants";
+import { accessNoticeFromAttributes } from "./access";
 
 export const IMAGE_VARIANT_NAMES: ImageVariant[] = ["thumb", "grid", "full"];
 
@@ -88,6 +89,8 @@ export interface SpotSerializeOptions {
   includeExact?: boolean;
   favorite?: boolean;
   distanceMeters?: number;
+  /** 基于直线距离估算的步行分钟数，仅附近搜索返回 */
+  walkingMinutes?: number;
 }
 
 export function serializeSpot(spot: SpotLike, options: SpotSerializeOptions = {}) {
@@ -130,6 +133,12 @@ export function serializeSpot(spot: SpotLike, options: SpotSerializeOptions = {}
   if (options.distanceMeters !== undefined) {
     payload.distanceMeters = Math.round(options.distanceMeters);
   }
+  if (options.walkingMinutes !== undefined) {
+    payload.walkingMinutes = options.walkingMinutes;
+  }
+
+  const accessNotice = accessNoticeFromAttributes(spot.attributes);
+  if (accessNotice) payload.accessNotice = accessNotice;
 
   return payload;
 }

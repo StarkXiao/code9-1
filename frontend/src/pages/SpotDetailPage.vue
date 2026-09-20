@@ -208,6 +208,15 @@ onMounted(async () => {
 
           <p v-if="spot.description" class="detail-description">{{ spot.description }}</p>
 
+          <el-alert
+            v-if="spot.accessNotice"
+            class="detail-access"
+            type="warning"
+            :closable="false"
+            show-icon
+            :title="spot.accessNotice"
+          />
+
           <div class="detail-meta">
             <span class="badge badge--ok">{{ spot.freshness.confirmCount }} 人确认仍然准确</span>
             <span class="badge">新鲜度 {{ spot.freshness.score }}</span>
@@ -305,6 +314,10 @@ onMounted(async () => {
   margin: 16px 0 0;
   line-height: 1.7;
   white-space: pre-wrap;
+}
+
+.detail-access {
+  margin-top: 14px;
 }
 
 .detail-meta {

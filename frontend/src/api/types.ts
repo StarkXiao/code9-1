@@ -65,6 +65,8 @@ export interface Spot {
   updatedAt: string;
   favorite?: boolean;
   distanceMeters?: number;
+  walkingMinutes?: number;
+  accessNotice?: string;
 }
 
 export interface Paged<T> {
