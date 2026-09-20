@@ -212,6 +212,14 @@ onMounted(async () => {
             <span class="badge badge--ok">{{ spot.freshness.confirmCount }} 人确认仍然准确</span>
             <span class="badge">新鲜度 {{ spot.freshness.score }}</span>
             <span v-if="spot.freshness.isStale" class="badge badge--warn">信息可能已过期</span>
+            <span
+              v-for="note in spot.accessNotes"
+              :key="note.kind"
+              class="badge"
+              :class="note.kind === 'steps' ? 'badge--warn' : 'badge--ok'"
+            >
+              {{ note.text }}
+            </span>
             <span class="badge">{{ spot.stats.commentCount }} 条评论</span>
             <span class="badge">{{ spot.stats.favoriteCount }} 人收藏</span>
           </div>

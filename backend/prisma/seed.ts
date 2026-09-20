@@ -14,6 +14,22 @@ interface CategorySeed {
   schema: Record<string, unknown>;
 }
 
+// 五个分类共用的出入口通行属性，附近搜索的通行提示由这两项推导
+const ENTRANCE_ACCESS_PROPERTIES = {
+  entrance_steps: {
+    type: "boolean",
+    label: "出入口有台阶",
+    help: "台阶对轮椅、婴儿车不友好，请如实填写",
+    ui: "switch",
+  },
+  entrance_ramp: {
+    type: "boolean",
+    label: "出入口有坡道",
+    help: "坡道方便轮椅与婴儿车通行",
+    ui: "switch",
+  },
+} as const;
+
 const CATEGORIES: CategorySeed[] = [
   {
     code: "bench",
@@ -61,6 +77,7 @@ const CATEGORIES: CategorySeed[] = [
             mixed: "混合",
           },
         },
+        ...ENTRANCE_ACCESS_PROPERTIES,
       },
     },
   },
@@ -104,6 +121,7 @@ const CATEGORIES: CategorySeed[] = [
         },
         open_hours: { type: "string", label: "开放时段", maxLength: 40, ui: "text" },
         closed_in_winter: { type: "boolean", label: "冬季会关闭", ui: "switch" },
+        ...ENTRANCE_ACCESS_PROPERTIES,
       },
     },
   },
@@ -129,6 +147,7 @@ const CATEGORIES: CategorySeed[] = [
         },
         enclosed: { type: "boolean", label: "是否封闭", ui: "switch" },
         lighting: { type: "boolean", label: "夜间有照明", ui: "switch" },
+        ...ENTRANCE_ACCESS_PROPERTIES,
       },
     },
   },
@@ -187,6 +206,7 @@ const CATEGORIES: CategorySeed[] = [
             },
           },
         },
+        ...ENTRANCE_ACCESS_PROPERTIES,
       },
     },
   },
@@ -225,6 +245,7 @@ const CATEGORIES: CategorySeed[] = [
         all_night: { type: "boolean", label: "整夜亮着", ui: "switch" },
         safety_rating: { type: "integer", label: "夜间安全感", minimum: 1, maximum: 5, ui: "rating" },
         has_camera: { type: "boolean", label: "附近有监控", ui: "switch" },
+        ...ENTRANCE_ACCESS_PROPERTIES,
       },
     },
   },
@@ -259,7 +280,7 @@ const SPOTS: SpotSeed[] = [
     categoryCode: "drinking_water",
     title: "公园入口的直饮水龙头",
     description: "两个龙头，一个高一个低，低的那个推轮椅也能够到。冬天会关掉。",
-    attributes: { type: "direct", free: true, height: "multi", temperature: "cold", open_hours: "6:00–21:00", closed_in_winter: true },
+    attributes: { type: "direct", free: true, height: "multi", temperature: "cold", open_hours: "6:00–21:00", closed_in_winter: true, entrance_ramp: true },
     lat: 31.2285,
     lng: 121.4698,
     addressText: "上海市黄浦区武胜路附近",
@@ -270,7 +291,7 @@ const SPOTS: SpotSeed[] = [
     categoryCode: "rain_shelter",
     title: "地铁口旁的遮雨棚",
     description: "下雨天等车能躲一下，能站十几个人，靠墙有一排窄座位。",
-    attributes: { capacity: 15, has_seats: true, coverage: "medium", enclosed: false, lighting: true },
+    attributes: { capacity: 15, has_seats: true, coverage: "medium", enclosed: false, lighting: true, entrance_steps: true, entrance_ramp: true },
     lat: 31.2362,
     lng: 121.4805,
     addressText: "上海市黄浦区南京东路附近",
@@ -287,6 +308,7 @@ const SPOTS: SpotSeed[] = [
       has_seats: false,
       crowd_level: "empty",
       good_for: ["phone_call", "reading"],
+      entrance_steps: true,
     },
     lat: 31.2241,
     lng: 121.4756,

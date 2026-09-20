@@ -160,7 +160,7 @@ function resetFilters() {
           <el-select v-model="filters.sort" size="small" style="width: 116px" :disabled="Boolean(near)">
             <el-option label="最新鲜" value="freshness" />
             <el-option label="最新发布" value="newest" />
-            <el-option label="距离最近" value="distance" />
+            <el-option label="步行最快" value="distance" />
           </el-select>
         </div>
 
@@ -199,8 +199,19 @@ function resetFilters() {
           <div class="spot-card__meta">
             <span class="badge">{{ spot.freshness.confirmCount }} 人确认过</span>
             <span v-if="spot.freshness.isStale" class="badge badge--warn">信息可能已过期</span>
-            <span v-if="spot.distanceMeters !== undefined" class="badge">
+            <span v-if="spot.walkingMinutes !== undefined" class="badge">
+              步行约 {{ spot.walkingMinutes }} 分钟
+            </span>
+            <span v-else-if="spot.distanceMeters !== undefined" class="badge">
               约 {{ spot.distanceMeters }} 米
+            </span>
+            <span
+              v-for="note in spot.accessNotes"
+              :key="note.kind"
+              class="badge"
+              :class="note.kind === 'steps' ? 'badge--warn' : 'badge--ok'"
+            >
+              {{ note.text }}
             </span>
             <span v-if="spot.media.length" class="badge">{{ spot.media.length }} 张图</span>
           </div>

@@ -5,6 +5,14 @@ import { logger } from "../../utils/logger";
 const EARTH_RADIUS_M = 6371008.8;
 const METERS_PER_DEG_LAT = 111320;
 
+/**
+ * 步行耗时估算用的两个常数：
+ * 普通人步行约 80 米/分钟（4.8 km/h）；接口用的是直线距离，
+ * 实际步行要绕开街区，乘 1.3 的绕行系数更接近真实耗时。
+ */
+export const WALKING_METERS_PER_MINUTE = 80;
+export const WALKING_DETOUR_FACTOR = 1.3;
+
 export interface LatLng {
   lat: number;
   lng: number;
@@ -70,6 +78,15 @@ export function boundingBox(center: LatLng, radiusMeters: number) {
     minLng: center.lng - lngDelta,
     maxLng: center.lng + lngDelta,
   };
+}
+
+/**
+ * 由直线距离估算步行分钟数，向上取整。
+ * 就在旁边（≤0 米）返回 0；其余至少 1 分钟，避免出现"步行 0 分钟"的误导。
+ */
+export function estimateWalkingMinutes(distanceMeters: number): number {
+  if (!Number.isFinite(distanceMeters) || distanceMeters <= 0) return 0;
+  return Math.max(1, Math.ceil((distanceMeters * WALKING_DETOUR_FACTOR) / WALKING_METERS_PER_MINUTE));
 }
 
 /** 把地址裁剪到街道级别，不展示门牌号 */

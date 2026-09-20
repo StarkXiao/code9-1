@@ -48,6 +48,11 @@ export interface SpotLocation {
   precise: boolean;
 }
 
+export interface AccessNote {
+  kind: "steps" | "ramp";
+  text: string;
+}
+
 export interface Spot {
   uuid: string;
   title: string;
@@ -60,11 +65,13 @@ export interface Spot {
   freshness: { score: number; confirmCount: number; isStale: boolean; lastConfirmedAt: string | null };
   stats: { commentCount: number; favoriteCount: number };
   author: { uuid: string | null; nickname: string } | null;
+  accessNotes: AccessNote[];
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
   favorite?: boolean;
   distanceMeters?: number;
+  walkingMinutes?: number;
 }
 
 export interface Paged<T> {

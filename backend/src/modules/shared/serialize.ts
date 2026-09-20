@@ -88,6 +88,37 @@ export interface SpotSerializeOptions {
   includeExact?: boolean;
   favorite?: boolean;
   distanceMeters?: number;
+  /** 附近搜索时由直线距离估算的步行分钟数 */
+  walkingMinutes?: number;
+}
+
+export interface AccessNote {
+  kind: "steps" | "ramp";
+  text: string;
+}
+
+/**
+ * 出入口通行提示，从属性里的台阶/坡道标记推导。
+ * 两项都没填的条目返回空数组——不展示提示，
+ * 避免被误读成"已确认出入口平坦"。
+ */
+export function deriveAccessNotes(attributes: unknown): AccessNote[] {
+  if (!attributes || typeof attributes !== "object") return [];
+  const record = attributes as Record<string, unknown>;
+  const steps = record.entrance_steps === true;
+  const ramp = record.entrance_ramp === true;
+
+  const notes: AccessNote[] = [];
+  if (steps) {
+    notes.push({
+      kind: "steps",
+      text: ramp ? "出入口有台阶，另配有坡道可绕行" : "出入口有台阶，轮椅与婴儿车需注意",
+    });
+  }
+  if (ramp) {
+    notes.push({ kind: "ramp", text: "出入口有坡道，轮椅与婴儿车可通行" });
+  }
+  return notes;
 }
 
 export function serializeSpot(spot: SpotLike, options: SpotSerializeOptions = {}) {
@@ -121,6 +152,7 @@ export function serializeSpot(spot: SpotLike, options: SpotSerializeOptions = {}
       favoriteCount: spot.counts?.favorites ?? 0,
     },
     author: spot.owner ? { uuid: spot.owner.uuid ?? null, nickname: spot.owner.nickname } : null,
+    accessNotes: deriveAccessNotes(spot.attributes),
     publishedAt: spot.publishedAt,
     createdAt: spot.createdAt,
     updatedAt: spot.updatedAt,
@@ -129,6 +161,9 @@ export function serializeSpot(spot: SpotLike, options: SpotSerializeOptions = {}
   if (options.favorite !== undefined) payload.favorite = options.favorite;
   if (options.distanceMeters !== undefined) {
     payload.distanceMeters = Math.round(options.distanceMeters);
+  }
+  if (options.walkingMinutes !== undefined) {
+    payload.walkingMinutes = options.walkingMinutes;
   }
 
   return payload;

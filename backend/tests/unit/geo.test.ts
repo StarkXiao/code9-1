@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { boundingBox, fuzzCoordinates, haversineMeters, isValidLatLng } from "../../src/services/geo";
+import {
+  boundingBox,
+  estimateWalkingMinutes,
+  fuzzCoordinates,
+  haversineMeters,
+  isValidLatLng,
+} from "../../src/services/geo";
 
 describe("位置模糊化", () => {
   const origin = { lat: 31.2304, lng: 121.4737 };
@@ -49,5 +55,37 @@ describe("位置模糊化", () => {
     expect(isValidLatLng(91, 121.4)).toBe(false);
     expect(isValidLatLng(31.2, 181)).toBe(false);
     expect(isValidLatLng(Number.NaN, 121.4)).toBe(false);
+  });
+});
+
+describe("步行耗时估算", () => {
+  it("就在旁边时耗时为 0", () => {
+    expect(estimateWalkingMinutes(0)).toBe(0);
+    expect(estimateWalkingMinutes(-5)).toBe(0);
+  });
+
+  it("距离再近也至少 1 分钟，不会出现「步行 0 分钟」的误导", () => {
+    expect(estimateWalkingMinutes(1)).toBe(1);
+    expect(estimateWalkingMinutes(60)).toBe(1);
+  });
+
+  it("按 80 米/分钟加 1.3 绕行系数向上取整", () => {
+    // 80 米直线 ≈ 104 米步行 ≈ 1.3 分钟 → 2 分钟
+    expect(estimateWalkingMinutes(80)).toBe(2);
+    // 1000 米直线 ≈ 1300 米步行 ≈ 16.25 分钟 → 17 分钟
+    expect(estimateWalkingMinutes(1000)).toBe(17);
+  });
+
+  it("耗时随距离单调不减，可以安全地按耗时排序", () => {
+    const distances = [0, 50, 120, 300, 800, 1500, 3000];
+    const minutes = distances.map(estimateWalkingMinutes);
+    for (let i = 1; i < minutes.length; i += 1) {
+      expect(minutes[i]).toBeGreaterThanOrEqual(minutes[i - 1]!);
+    }
+  });
+
+  it("非法输入按 0 处理", () => {
+    expect(estimateWalkingMinutes(Number.NaN)).toBe(0);
+    expect(estimateWalkingMinutes(Number.POSITIVE_INFINITY)).toBe(0);
   });
 });
